@@ -15,8 +15,15 @@ namespace ChickenAPI.Controllers
             _context = context;
         }
 
+        // GET: api/Chicken
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Chicken>>> GetAll()
+        {
+            return await _context.Chicken.ToListAsync();
+        }
+
         //GET: api/Chicken/{id}
-        [HttpGet("(id)")]
+        [HttpGet("{id}")]
         public async Task<ActionResult<Chicken>> GetById(int id)
         {
             var chicken = await _context.Chicken.FindAsync(id);

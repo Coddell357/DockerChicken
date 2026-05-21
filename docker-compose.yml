@@ -23,7 +23,7 @@ services:
       dockerfile: ./ChickMVC/Dockerfile # Path to MVC Dockerfile
     container_name: mvc-chick-service-magic
     environment:
-      SQL_CONNECTION_STRING: "Server=chick-db; Database=Farm;Trusted_Connection=false;MultipleActiveResultSets=true;Encrypt=false;user id=sa;password=Password1!"
+      SQL_CONNECTION_STRING: "Server=chick-db-service; Database=Farm;Trusted_Connection=false;MultipleActiveResultSets=true;Encrypt=false;user id=sa;password=Password1!"
     ports:
       - "80:8080"
     networks:
