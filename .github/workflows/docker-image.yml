@@ -95,6 +95,9 @@ jobs:
     
     - name: Integration Step 2 - Verify Front-End MVC Data Rendering
       run: |
+        echo "MVC wake up"
+        sleep 5
+        
         echo "Querying the MVC web application home page on port 80..."
         MVC_RESPONSE=$(curl -s http://localhost:80)
 
