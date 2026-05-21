@@ -29,7 +29,7 @@ namespace ChickenAPI
                 {
                     //Tell Swagger UI to look at the native .NET OpenSpi endpoint
                     options.SwaggerEndpoint("/openapi/v1.json", "Chicken API v1");
-                    options.RoutePrefix="swagger";
+                    options.RoutePrefix = "swagger";
                 }); // Serves the interactive web UI
             }
 

@@ -22,7 +22,7 @@ namespace ChickenAPI.Controllers
             var chicken = await _context.Chicken.FindAsync(id);
             if (chicken == null)
                 return NotFound();
-                
+
             return chicken;
         }
 
@@ -70,6 +70,6 @@ namespace ChickenAPI.Controllers
 
             return NoContent();
         }
-        
+
     }
 }

@@ -6,28 +6,28 @@ namespace ChickenAPI.Model
     public class Chicken
     {
         [Key]
-        public int ChickID {get; set;}
+        public int ChickID { get; set; }
 
         [Required]
         [MaxLength(50)]
-        public string Name {get; set;}
+        public string Name { get; set; }
 
-         [Required]
+        [Required]
         [MaxLength(50)]
-        public string Breed {get; set;}
+        public string Breed { get; set; }
 
         [Range(0, 50)] // Assuming chickens won't live past 50 years
-        public int Age {get; set;}
+        public int Age { get; set; }
 
         [Column(TypeName = "decimal(5,2)")]
-        [Range(0,100)] //eggs per day
-        public decimal EggProduction {get; set;}
+        [Range(0, 100)] //eggs per day
+        public decimal EggProduction { get; set; }
 
         [Required]
-        public bool isPregnant {get; set;}
+        public bool isPregnant { get; set; }
 
         [Required]
-        public DateTime LastVetCheck {get; set;}
+        public DateTime LastVetCheck { get; set; }
 
     }
 }
