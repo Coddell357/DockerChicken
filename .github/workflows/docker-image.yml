@@ -96,8 +96,8 @@ jobs:
     - name: Integration Step 2 - Verify Front-End MVC Data Rendering
       run: |
         echo "MVC wake up"
-        sleep 5
-        
+        sleep 10
+
         echo "Querying the MVC web application home page on port 80..."
         MVC_RESPONSE=$(curl -s http://localhost:80)
 
@@ -106,6 +106,7 @@ jobs:
           echo "SUCCESS: MVC interface successfully fetched and displayed containerized API data!"
         else
           echo "ERROR: Data assertion failed. The MVC home page is not showing the injected database string payload."
+          echo "$MVC_RESPONSE"
           exit 1
         fi
     
