@@ -5,45 +5,47 @@ services:
       dockerfile: ./ChickDB/Dockerfile
     container_name: chick-db
     environment:
-      - ACCEPT_EULA: "Y"
-      - MSSQL_SA_PASSWORD: "Password1!"
-    # Explicity lock down port 1433 to localhost loopback rules to secure data records from external internet
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Password1!"
+      MSSQL_PID: "Express"
     ports:
-      - "127.0.0.1:1433:1433"
+      - "1433:1433"
+      - "1400:1433"  
     volumes:
       - db_data:/var/opt/mssql
+    restart: unless-stopped
     networks:
       - chick-network
+
+  mvc-service:
+      build:
+        context: .               
+        dockerfile: ./ChickMVC/Dockerfile  
+      container_name: mvc-chick-service-magic
+      environment:
+        - SQL_CONNECTION_STRING=Server=chick-db;Database=Farm;Trusted_Connection=false;MultipleActiveResultSets=true;Encrypt=false;user id=sa;password=Password1!
+        - ASPNETCORE_URLS=http://0.0.0.0:8080   # <-- FORCES C# TO LISTEN ON 8080 INTERNALLY
+      ports:
+        - "80:8080"                             # <-- Droplet port 80 routes to container 8080
+      depends_on:
+        - chick-db-service
+      networks:
+        - chick-network 
 
   api-service:
     build:
       context: .
       dockerfile: ./ChickenAPI/Dockerfile
-    container_name: api-chicken-service
+    container_name: api-chick-service
     environment:
-      - SQL_CONNECTION_STRING: "Server=chick-db; Database=Farm;Trusted_Connection=false;MultipleActiveResultSets=true;Encrypt=false;user id=sa;password=Password1!"
-      - ASPNETCORE_URLS=[http://0.0.0.0:8080](http://0.0.0.0:8080)
+      - SQL_CONNECTION_STRING=Server=chick-db;Database=Farm;Trusted_Connection=false;MultipleActiveResultSets=true;Encrypt=false;user id=sa;password=Password1!
+      - ASPNETCORE_URLS=http://0.0.0.0:8080  # <-- FORCES C# TO LISTEN ON 8080 INTERNALLY
     ports:
-      - "8080:8080"
-    depends_on:
-      chick-db-service:
-        condition: service_healthy
-    networks:
-      - chick-network
-  mvc-service:
-    build:
-      context: .                # Root context to ensure  file accessibility 
-      dockerfile: ./ChickMVC/Dockerfile # Path to MVC Dockerfile
-    container_name: mvc-chick-service-magic
-    environment:
-      - SQL_CONNECTION_STRING: "Server=chick-db-service; Database=Farm;Trusted_Connection=false;MultipleActiveResultSets=true;Encrypt=false;user id=sa;password=Password1!"
-      - ASPNETCORE_URLS=http://0.0.0.0:8080  #<-- FORCES TO LISTEN ON 8080 INTERNALLY
-    ports:                                  # <-- Droplet port 8080 routes to container 8080
-      - "80:8080" 
+      - "8080:8080"                           # <-- Droplet port 8080 routes to container 8080
     depends_on:
       - chick-db-service
     networks:
-      - chick-network    
+      - chick-network
 
 networks:
   chick-network:
