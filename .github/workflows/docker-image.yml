@@ -126,6 +126,83 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment: Production
     steps:
-    - name: Execute Server Infrastructure Sync
+    - name: Deploy via SSH to DigitalOcean Droplet
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.DO_DROPLET_IP }}
+        key: ${{ secrets.DO_SSH_KEY }}
+        username: root
+        timeout: 60s
+        command_timeout: 30m #Safeguards long-running .NET restores from throwing timeout errors
+        script: |
+          # Target project directory on the remote server
+          PROJECT_DIR="dockerchicken"
+
+          # FORCE Git to explicitly use the Droplet's authorized deploy key file path context
+          export GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o IdentitiesOnly=yes"
+
+          # Navigate into directory or pull repository via Git over SSH dynamically
+          if [ -d "$PROJECT_DIR" ]; then
+            cd "$PROJECT_DIR"
+            echo "Syncing remote context safely..."
+            git fetch --All
+            git reset --hard origin/${{ github.ref_name }}
+            git pull
+          else
+            echo "Initializing remote directory workspace layout dynamically for ${{ github.repository }}..."
+            git clone git@github.com:${{ github.repository }}.git "$PROJECT_DIR"
+            cd "$PROJECT_DIR"
+          fi
+
+          # Bring down older services safely
+          echo "Stopping active container clusters..."
+          docker compose down
+
+          # Run the fresh build and up on the Droplet
+          echo "Initiating production runtime compilation environment..."
+          docker compose up -d --build
+
+          echo "Deployment completely executed successfully!"
+  
+  # JOB 5: Connects over the public internet to verify the deployment is accessible globally
+  post-deployment-smoke-test:
+    name: Live Cloud Smoke Verification
+    runs-on: ubuntu-latest
+    needs: cd-deployment
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+    - name: Settle Environments
       run: |
-        echo "All automated tests passed cleanly. Initiating production handshake scripts.."
+        echo "Allowing containers 15 seconds to fully complete initial production boot cycles..."
+        sleep 15
+
+    - name: Verify Public REST API Gateway (Port 8080)
+      run: |
+        echo "Testing public connection to API over port 8080..."
+        API_URL="http://${{ secrets.DO_DROPLET_IP }}:8080/GetMeEggs"
+
+        # Pull response, enforcing a connection timeout if the network blocks integration
+        API_RESPONSE=$(curl -sSf --connect-timeout 10 "$API_URL")
+        echo "API Response Received: $API_RESPONSE"
+
+        if echo "$API_RESPONSE" | grep -q "Here are some eggs!"; then
+          echo "PASSED: Backend cloud REST API gateway is live and reponding externally!"
+        else
+          echo "FAILED: Backend API responded with unexpected data layout."
+          exit 1
+        fi
+
+    - name: Verify Public MVC User Interface (Port 80)
+      run: |
+        echo "Testing public connection to MVC Front-End over port 80..."
+        MVC_URL="http://${{ secrets.DO_DROPLET_IP }}:80"
+
+        MVC_HEADERS=$(curl -sI --connect-timeout 10 "MVC_URL")
+        echo "$MVC_HEADERS"
+
+        If echo "$MVC_HEADERS" | grep -qE "200 OK|302 Found|302 Moved"; then
+          echo "PASSED: Front-End MVC application is public and handling connections flawlessly!"
+        else
+          echo "FAILED: Front-End MVC Application rfused external connection handshake."
+          exit 1
+        fi
